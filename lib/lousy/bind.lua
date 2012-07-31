@@ -216,6 +216,34 @@ function match_buf(object, binds, buffer, args)
     return false
 end
 
+--- Determine whether any of the bindings can actually match given the current
+-- buffer contents
+-- @param binds The table of binds in which to check for a match.
+-- @param buffer The buffer string to match
+-- @return True if at least one binding can match the buffer, otherwise false
+function buf_can_match(binds, buffer)
+    assert(buffer and string.match(buffer, "%S"), "invalid buffer")
+
+    local pattern = "^"..buffer..".*"
+    local free_pattern = "^[^^].*"
+
+    for _, b in ipairs(binds) do
+        if b.type == "buffer" then
+            -- free patterns can match at any time
+            if string.match(b.pattern, free_pattern) then
+                return true
+            end
+
+            local buf = string.gsub(string.gsub(b.pattern, "^^", ""), "$$", "")
+
+            if string.match(buf, pattern) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 --- Try and match a command or buffer binding in a given table of bindings
 -- and call that bindings callback function.
 -- @param object The first argument of the bind callback function.
@@ -317,7 +345,8 @@ function hit(object, binds, mods, key, args)
             args.buffer = (args.buffer or "") .. key
             args.updated_buf = true
         end
-        if match_buf(object, binds, args.buffer, args) then
+        if match_buf(object, binds, args.buffer, args) or
+            not buf_can_match(binds, args.buffer) then
             return true
         end
     end
