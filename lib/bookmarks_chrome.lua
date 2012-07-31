@@ -132,10 +132,9 @@ local html = [==[
         .bookmark .bottom a {
             text-decoration: none;
             -webkit-user-select: none;
-            cursor: default;
         }
 
-        .bookmark .tags a {
+        .bookmark .tags span.tag {
             margin: 0 .3em;
             padding: .2em .4em;
             color: #666;
@@ -147,20 +146,31 @@ local html = [==[
             -webkit-border-radius: 0.3em;
         }
 
-        .bookmark .tags a:hover {
+        .bookmark .tags span.tag.hovered {
             color: #222;
-            cursor: pointer;
+        }
+
+        .bookmark .tags span.tag a {
+            color: #666;
+            font-weight: bold;
+            text-decoration: none;
+            margin: 0 .3em;
+            display: none;
+        }
+
+        .bookmark .tags span.tag a:hover {
+            color: #700;
         }
 
         .bookmark .controls a {
             color: #aaa;
             margin: 0 .3em;
+            cursor: pointer;
         }
 
         .bookmark .controls a:hover {
             color: #11c;
             text-decoration: underline;
-            cursor: pointer;
         }
 
         .bookmark .hidden {
@@ -291,6 +301,29 @@ $(document).ready(function () {
 
     $("#templates").remove();
 
+    function make_tag(tags, tag, id) {
+        var new_tag = $("<span class=\"tag\">" + tag + "</span>");
+        var remove = $("<a href=\"#\">X</a>");
+
+        remove.click(function() {
+             bookmarks_untag(id, tag);
+             new_tag.hide(100, function() { new_tag.remove(); });
+        });
+
+        new_tag.mouseenter(function() {
+            new_tag.toggleClass("hovered");
+            remove.show();
+        });
+
+        new_tag.mouseleave(function() {
+            new_tag.toggleClass("hovered");
+            remove.hide();
+        });
+
+        new_tag.append(remove);
+        tags.append(new_tag);
+    };
+
     function make_bookmark(b) {
         bookmarks[b.id] = b;
 
@@ -309,7 +342,7 @@ $(document).ready(function () {
             var $tags = $b.find(".tags").eq(0);
             var tags = (b.tags || "").split(","), len = tags.length;
             for (var i = 0; i < len; i++)
-                $tags.append($("<a></a>").text(tags[i]));
+                make_tag($tags, tags[i], b.id);
         }
 
         return $b;
@@ -427,8 +460,13 @@ export_funcs = {
         return rows
     end,
 
+    bookmarks_untag = function (bookmark_id, tag)
+        local bid = type(bookmark_id) == "number" and bookmark_id or tonumber(bookmark_id)
+        bookmarks.untag(bid, tag)
+    end,
+
     bookmarks_add = bookmarks.add,
-    bookmarks_remove = bookmarks.remove,
+    bookmarks_remove = bookmarks.remove
 }
 
 chrome.add("bookmarks", function (view, meta)
