@@ -301,13 +301,27 @@ $(document).ready(function () {
 
     $("#templates").remove();
 
-    function make_tag(tags, tag, id) {
+    function make_tag(bmark, tags, tag, id) {
         var new_tag = $("<span class=\"tag\">" + tag + "</span>");
         var remove = $("<a href=\"#\">X</a>");
 
         remove.click(function() {
-             bookmarks_untag(id, tag);
-             new_tag.hide(100, function() { new_tag.remove(); });
+            var bookmark = bookmarks[id];
+            if (bookmark && bookmark.tags) {
+                /* remove tag from database */
+                bookmarks_untag(id, tag);
+
+                /* refresh internal tags value */
+                bookmark.tags = $.grep(bookmark.tags.split(","), function(elem) {
+                    return elem !== tag;
+                }).join(",");
+
+                /* refresh tags input if visible */
+                bmark.find("li.field.tags input").val(bookmark.tags);
+
+                /* hide tag element */
+                new_tag.hide(100, function() { new_tag.remove(); });
+            }
         });
 
         new_tag.mouseenter(function() {
@@ -342,7 +356,7 @@ $(document).ready(function () {
             var $tags = $b.find(".tags").eq(0);
             var tags = (b.tags || "").split(","), len = tags.length;
             for (var i = 0; i < len; i++)
-                make_tag($tags, tags[i], b.id);
+                make_tag($b, $tags, tags[i], b.id);
         }
 
         return $b;
@@ -364,11 +378,11 @@ $(document).ready(function () {
         });
 
         // Hide controls when leaving bookmark
-        $results.on("mouseleave", ".bookmark", function () {
+        $results.on("mouseleave", ".bookmark", function() {
             $(this).find(".bottom .controls").addClass("hidden");
         });
 
-        $results.on("click", ".bookmark .controls .edit-button", function (e) {
+        $results.on("click", ".bookmark .controls .edit-button", function() {
             var $b = $(this).parents(".bookmark").eq(0), $e = $(edit_html);
 
             // Remove previous edit form
@@ -377,7 +391,7 @@ $(document).ready(function () {
             $b.addClass("editing");
 
             // Animate out & delete form
-            $e.find(".cancel-button").click(function (e) {
+            $e.find(".cancel-button").click(function() {
                 $b.removeClass("editing");
                 $e.slideUp(function () { $e.remove(); })
             });
@@ -388,7 +402,7 @@ $(document).ready(function () {
                 $tags = $e.find(".tags input").eq(0).val(b.tags);
                 $desc = $e.find(".edit-desc textarea").eq(0).val(b.desc);
 
-            $e.find(".submit-button").click(function (e) {
+            $e.find(".submit-button").click(function() {
                 // Add new bookmark
                 bookmarks_add($uri.val(), { title: $title.val(), tags: $tags.val(),
                     desc: $desc.val(), created: b.created });
