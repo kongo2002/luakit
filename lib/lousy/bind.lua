@@ -224,7 +224,7 @@ end
 function buf_can_match(binds, buffer)
     assert(buffer and string.match(buffer, "%S"), "invalid buffer")
 
-    local pattern = "^"..string.gsub(buffer, "[][%%]", "%%%0")..".*"
+    local pattern = "^"..string.gsub(buffer, "[][%%.]", "%%%0")..".*"
     local free_pattern = "^[^^].*"
 
     for _, b in ipairs(binds) do
