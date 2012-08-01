@@ -239,6 +239,10 @@ function buf_can_match(binds, buffer)
             if string.match(buf, pattern) then
                 return true
             end
+
+            -- TODO: it's difficult to exactly parse all kinds of regular
+            -- expression binding patterns but we have to at least return 'true'
+            -- in case of a possible match
         end
     end
     return false
